@@ -14,7 +14,7 @@ class OpenWeatherMap:
     CURRENT_WEATHER_API = API_BASE + "/data/2.5/weather" + API_PARAMS
     FORECAST_API = API_BASE + "/data/2.5/forecast" + API_PARAMS
     GEOCODING_API = API_BASE + "/geo/1.0/direct?q={location}&limit=1&appid={api_key}"
-    ICON_URL = API_BASE + "/img/wn/{code}.png"
+    ICON_URL = "https://www.openweathermap.org/img/wn/{code}@2x.png"
 
     def __init__(self):
         self.lat = float(os.environ.get("LATITUDE") or input("Latitude: "))
@@ -34,12 +34,6 @@ class OpenWeatherMap:
         assert resp.status_code == 200
         data = resp.json()
         forecasts = data["list"]
-
-        for forecast in forecasts:
-            # print(datetime.fromtimestamp(forecast["dt"], tz=timezone.utc).astimezone().isoformat(" "))
-            print(datetime.fromtimestamp(forecast["dt"], tz=timezone.utc).astimezone().strftime("%H:%M"))
-            pprint(forecast)
-
         return forecasts
 
     @classmethod
