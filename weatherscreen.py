@@ -1,6 +1,7 @@
 import time
 from datetime import datetime, timezone
 from enum import Enum, auto
+from typing import Any, Dict
 
 from PIL import Image, ImageDraw, ImageFont
 from displayhatmini import DisplayHATMini
@@ -66,7 +67,8 @@ class App:
 
         self.displayhatmini.display()
 
-    def paint_weather(self, weather):
+    def paint_weather(self, weather: Dict[str, Any]):
+        print(weather)
         icon = owm.icon(
             weather["weather"][0]["icon"]
         ).resize((150, 150))
@@ -98,7 +100,7 @@ class App:
 
         self.draw.text(
             xy=(width, 0),
-            text=weather["name"],
+            text=weather.get("name", ""),
             anchor="rt",
             fill=Color.WHITE,
             font=self.font,
@@ -133,28 +135,27 @@ class App:
         if not self.displayhatmini.read_button(pin):
             return
 
-        if pin == DisplayHATMini.BUTTON_A:
-            self.mode = AppMode.CURRENT
-        elif pin == DisplayHATMini.BUTTON_B:
-            self.mode = AppMode.FORECAST
+        if self.mode == AppMode.CURRENT:
+            if pin == DisplayHATMini.BUTTON_B:
+                self.mode = AppMode.FORECAST
 
-        elif pin == DisplayHATMini.BUTTON_X and self.mode == AppMode.FORECAST:
-            self.fidx += 1
-            self.fidx %= len(self.forecasts)
-
-        elif pin == DisplayHATMini.BUTTON_Y and self.mode == AppMode.FORECAST:
-            self.fidx -= 1
-            self.fidx = max(0, self.fidx)
+        elif self.mode == AppMode.FORECAST:
+            if pin == DisplayHATMini.BUTTON_A:
+                self.mode = AppMode.CURRENT
+            elif pin == DisplayHATMini.BUTTON_X:
+                self.fidx += 1
+                self.fidx %= len(self.forecasts)
+            elif pin == DisplayHATMini.BUTTON_Y:
+                self.fidx -= 1
+                self.fidx = max(0, self.fidx)
 
         else:
-            pass
+            raise RuntimeError("Unknown operating mode")
 
         self.clear_and_update()
 
-# App().clear_and_update()
-App()
 
-OpenWeatherMap().current()
+App()
 
 while True:
     time.sleep(1.0 / 30)
