@@ -1,0 +1,4 @@
+displayhatmini
+Pillow
+python-dotenv
+requests
