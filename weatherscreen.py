@@ -41,7 +41,12 @@ class App:
 
         self.buffer = Image.new("RGB", (width, height))
         self.draw = ImageDraw.Draw(self.buffer)
-        self.font = ImageFont.truetype("/usr/share/fonts/truetype/freefont/FreeMono.ttf", 20)
+        try:
+            self.font = ImageFont.truetype(
+                "/usr/share/fonts/truetype/freefont/FreeMono.ttf", 20
+            )
+        except OSError:
+            self.font = ImageFont.load_default()
 
         self.displayhatmini = DisplayHATMini(
             buffer=self.buffer, backlight_pwm=True
