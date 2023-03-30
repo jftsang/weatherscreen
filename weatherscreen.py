@@ -20,9 +20,8 @@ height = DisplayHATMini.HEIGHT
 
 
 class AppMode(Enum):
-    CURRENT = auto()
+    PAGE = auto()
     FOUR = auto()
-    FORECAST_PAGES = auto()
     ERRORS = auto()
 
 
@@ -51,7 +50,7 @@ class Led:
 
 class App:
     def __init__(self):
-        self.mode = AppMode.CURRENT
+        self.mode = AppMode.PAGE
         self.errors: List[Exception] = []
 
         self.buffer = Image.new("RGB", (width, height))
@@ -87,12 +86,10 @@ class App:
         print(self.mode)
 
         try:
-            if self.mode == AppMode.CURRENT:
-                self.current_view()
+            if self.mode == AppMode.PAGE:
+                self.page_view()
             elif self.mode == AppMode.FOUR:
                 self.four_view()
-            elif self.mode == AppMode.FORECAST_PAGES:
-                self.forecast_page_view()
             elif self.mode == AppMode.ERRORS:
                 self.errors_view()
             else:
@@ -177,16 +174,23 @@ class App:
         self.displayhatmini.set_led(*Led.OFF)
         self.fidx = 0
 
-    def current_view(self):
+    def page_view(self):
         try:
             self.update_current_weather()
+            self.update_forecasts()
         except Exception as exc:
             self.handle(exc)
             return
 
-        self.paint_weather(self.current_weather)
+        print(self.fidx)
+
+        weathers = [self.current_weather, *self.forecasts]
+        self.paint_weather(weathers[self.fidx])
         self.draw.text(
-            xy=(0, 0), text="Current", fill=Color.WHITE, font=self.font
+            xy=(0, 0),
+            text="Current" if self.fidx == 0 else "Forecast",
+            fill=Color.WHITE,
+            font=self.font,
         )
 
     def paint_weather_small(self, weather, xy):
@@ -232,27 +236,15 @@ class App:
         ]
 
         self.clear()
-        weathers = [self.current_weather, *self.forecasts][self.fidx:self.fidx+4]
+        weathers = [self.current_weather, *self.forecasts][
+            self.fidx : self.fidx + 4
+        ]
         for weather, xy in zip(weathers, xys):
             self.paint_weather_small(weather, xy)
         # self.paint_weather_small(self.current_weather, xys[0])
         # self.paint_weather_small(self.forecasts[0], xys[1])
         # self.paint_weather_small(self.forecasts[1], xys[2])
         # self.paint_weather_small(self.forecasts[2], xys[3])
-
-    def forecast_page_view(self):
-        try:
-            self.displayhatmini.set_led(*Led.YELLOW)
-            self.update_forecasts()
-            self.displayhatmini.set_led(*Led.OFF)
-        except Exception as exc:
-            self.handle(exc)
-            return
-        print(self.fidx)
-        self.paint_weather(self.forecasts[self.fidx])
-        self.draw.text(
-            xy=(0, 0), text="Forecast", fill=Color.WHITE, font=self.font
-        )
 
     def errors_view(self):
         self.displayhatmini.set_led(*Led.OFF)
@@ -280,16 +272,22 @@ class App:
         if not self.displayhatmini.read_button(pin):
             return
 
-        if self.mode == AppMode.CURRENT:
+        if self.mode == AppMode.PAGE:
             if pin == DisplayHATMini.BUTTON_A:
                 self.mode = AppMode.FOUR
                 self.clear_and_update()
-            elif pin == DisplayHATMini.BUTTON_B:
+            elif pin == DisplayHATMini.BUTTON_X:
+                self.fidx -= 1
+                self.fidx = max(0, self.fidx)
+                self.clear_and_update()
+            elif pin == DisplayHATMini.BUTTON_Y:
+                self.fidx += 1
+                self.fidx = min(len(self.forecasts) + 1, self.fidx)
                 self.clear_and_update()
 
         elif self.mode == AppMode.FOUR:
             if pin == DisplayHATMini.BUTTON_A:
-                self.mode = AppMode.FORECAST_PAGES
+                self.mode = AppMode.ERRORS
                 self.clear_and_update()
             elif pin == DisplayHATMini.BUTTON_X:
                 self.fidx -= 4
@@ -300,22 +298,9 @@ class App:
                 self.fidx = min(len(self.forecasts), self.fidx)
                 self.clear_and_update()
 
-        elif self.mode == AppMode.FORECAST_PAGES:
-            if pin == DisplayHATMini.BUTTON_A:
-                self.mode = AppMode.ERRORS
-                self.clear_and_update()
-            elif pin == DisplayHATMini.BUTTON_X:
-                self.fidx -= 1
-                self.fidx = max(0, self.fidx)
-                self.clear_and_update()
-            elif pin == DisplayHATMini.BUTTON_Y:
-                self.fidx += 1
-                self.fidx = min(len(self.forecasts), self.fidx)
-                self.clear_and_update()
-
         elif self.mode == AppMode.ERRORS:
             if pin == DisplayHATMini.BUTTON_A:
-                self.mode = AppMode.CURRENT
+                self.mode = AppMode.PAGE
                 self.clear_and_update()
 
         else:
