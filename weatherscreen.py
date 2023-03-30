@@ -39,11 +39,9 @@ def timestamp2str(dt: int, short: bool = False) -> str:
     else:
         fmt = "%a %d %b, %H:%M %Z"
 
-    return (datetime
-            .fromtimestamp(dt, tz=timezone.utc)
-            .astimezone()
-            .strftime(fmt)
-            )
+    return (
+        datetime.fromtimestamp(dt, tz=timezone.utc).astimezone().strftime(fmt)
+    )
 
 
 class Led:
@@ -82,8 +80,7 @@ class App:
         self.displayhatmini.set_led(*Led.RED)
 
     def clear(self):
-        self.draw.rectangle(xy=((0, 0), (width, height)),
-                            fill=Color.BLACK)
+        self.draw.rectangle(xy=((0, 0), (width, height)), fill=Color.BLACK)
         self.displayhatmini.display()
         self.displayhatmini.set_backlight(0.2)
 
@@ -112,9 +109,7 @@ class App:
         print(weather)
         self.clear()
 
-        icon = owm.icon(
-            weather["weather"][0]["icon"]
-        ).resize((150, 150))
+        icon = owm.icon(weather["weather"][0]["icon"]).resize((150, 150))
         self.buffer.paste(
             icon,
             box=(width // 2 - 75, 40),
@@ -130,7 +125,7 @@ class App:
             text=f"{temp:.1f} C",
             anchor="mt",
             fill=Color.WHITE,
-            font=self.font
+            font=self.font,
         )
         self.draw.text(
             xy=(width // 2, 45),
@@ -160,7 +155,8 @@ class App:
         )
 
     def update_current_weather(self):
-        if (self.current_weather is not None
+        if (
+            self.current_weather is not None
             and (time.time() - self.current_weather["dt"]) < 300
         ):
             return
@@ -171,7 +167,8 @@ class App:
         self.displayhatmini.set_led(*Led.OFF)
 
     def update_forecasts(self) -> bool:
-        if (self.forecasts
+        if (
+            self.forecasts
             and self.forecasts[0]["dt"] >= time.time() + 3600 * 1.5
         ):
             return False
@@ -212,7 +209,7 @@ class App:
             text=tempstr,
             anchor="mt",
             fill=Color.WHITE,
-            font=self.font
+            font=self.font,
         )
 
         self.buffer.paste(mini, box=xy, mask=mini)
@@ -228,8 +225,10 @@ class App:
             return
 
         xys = [
-            (0, 0), (width // 2, 0), (0, height // 2),
-            (width // 2, height // 2)
+            (0, 0),
+            (width // 2, 0),
+            (0, height // 2),
+            (width // 2, height // 2),
         ]
 
         self.clear()
@@ -278,8 +277,9 @@ class App:
         y = 20
         for exc in self.errors:
             print(str(exc))
-            self.draw.text(xy=(20, y), text=str(exc), fill=Color.RED,
-                           font=self.font)
+            self.draw.text(
+                xy=(20, y), text=str(exc), fill=Color.RED, font=self.font
+            )
             y += 20
         self.errors = []
 
@@ -327,5 +327,5 @@ class App:
 app = App()
 
 while True:
-    time.sleep(1. / 30)
+    time.sleep(1.0 / 30)
     # app.clear_and_update()
