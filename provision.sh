@@ -2,7 +2,8 @@
 VENV="$HOME/venv39"
 set -eux
 sudo apt update
-sudo apt install -y python3-venv libatlas3-base git build-essential libopenjp2-7
+sudo apt install -y \
+  python3-venv libatlas3-base git build-essential libopenjp2-7 fonts-freefont-ttf
 sudo raspi-config nonint do_spi 0
 
 if [ ! -d "$VENV" ]; then

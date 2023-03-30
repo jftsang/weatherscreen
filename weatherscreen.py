@@ -140,7 +140,6 @@ class App:
             self.draw.text(
                 xy=(width - self.font.getlength(location), 0),
                 text=location,
-                anchor="rt",
                 fill=Color.WHITE,
                 font=self.font,
             )
@@ -149,7 +148,6 @@ class App:
         self.draw.text(
             xy=(width - self.font.getlength(timestr), height - 20),
             text=timestr,
-            anchor="rb",
             fill=Color.RED,
             font=self.font,
         )
@@ -166,17 +164,21 @@ class App:
         print(self.current_weather)
         self.displayhatmini.set_led(*Led.OFF)
 
-    def update_forecasts(self) -> bool:
+    def update_forecasts(self):
+        print(self.forecasts and self.forecasts[0]["dt"])
+        print(time.time())
+        print(self.forecasts and self.forecasts[0]["dt"] - time.time())
         if (
             self.forecasts
             and self.forecasts[0]["dt"] >= time.time() + 3600 * 1.5
         ):
-            return False
+            print("Skipping an update")
+            return
 
         self.displayhatmini.set_led(*Led.YELLOW)
         self.forecasts = owm.forecasts()
         self.displayhatmini.set_led(*Led.OFF)
-        return True
+        self.fidx = 0
 
     def current_view(self):
         try:
@@ -201,13 +203,14 @@ class App:
         minidraw.text(
             xy=((hw - self.font.getlength(timestr)) // 2, 20),
             text=timestr,
+            fill=Color.WHITE,
+            font=self.font,
         )
 
         tempstr = f'{weather["main"]["temp"]:.1f} C'
         minidraw.text(
             xy=((hw - self.font.getlength(tempstr)) // 2, hh - 30),
             text=tempstr,
-            anchor="mt",
             fill=Color.WHITE,
             font=self.font,
         )
@@ -232,22 +235,23 @@ class App:
         ]
 
         self.clear()
-        self.paint_weather_small(self.current_weather, xys[0])
-        self.paint_weather_small(self.forecasts[0], xys[1])
-        self.paint_weather_small(self.forecasts[1], xys[2])
-        self.paint_weather_small(self.forecasts[2], xys[3])
+        weathers = [self.current_weather, *self.forecasts][self.fidx:self.fidx+4]
+        for weather, xy in zip(weathers, xys):
+            self.paint_weather_small(weather, xy)
+        # self.paint_weather_small(self.current_weather, xys[0])
+        # self.paint_weather_small(self.forecasts[0], xys[1])
+        # self.paint_weather_small(self.forecasts[1], xys[2])
+        # self.paint_weather_small(self.forecasts[2], xys[3])
 
     def forecast_page_view(self):
         try:
             self.displayhatmini.set_led(*Led.YELLOW)
-            updated = self.update_forecasts()
-            if updated:
-                self.fidx = 0
+            self.update_forecasts()
             self.displayhatmini.set_led(*Led.OFF)
         except Exception as exc:
             self.handle(exc)
             return
-
+        print(self.fidx)
         self.paint_weather(self.forecasts[self.fidx])
         self.draw.text(
             xy=(0, 0), text="Forecast", fill=Color.WHITE, font=self.font
@@ -287,14 +291,24 @@ class App:
         if not self.displayhatmini.read_button(pin):
             return
 
-        if self.mode in {AppMode.CURRENT, AppMode.FOUR}:
+        if self.mode == AppMode.CURRENT:
             if pin == DisplayHATMini.BUTTON_A:
-                self.mode = AppMode.FORECAST_PAGES
+                self.mode = AppMode.FOUR
                 self.clear_and_update()
             elif pin == DisplayHATMini.BUTTON_B:
                 self.clear_and_update()
+
+        elif self.mode == AppMode.FOUR:
+            if pin == DisplayHATMini.BUTTON_A:
+                self.mode = AppMode.FORECAST_PAGES
+                self.clear_and_update()
             elif pin == DisplayHATMini.BUTTON_X:
-                self.mode = AppMode.FOUR
+                self.fidx -= 4
+                self.fidx = max(0, self.fidx)
+                self.clear_and_update()
+            elif pin == DisplayHATMini.BUTTON_Y:
+                self.fidx += 4
+                self.fidx = min(len(self.forecasts), self.fidx)
                 self.clear_and_update()
 
         elif self.mode == AppMode.FORECAST_PAGES:
@@ -302,12 +316,12 @@ class App:
                 self.mode = AppMode.TIME
                 self.clear_and_update()
             elif pin == DisplayHATMini.BUTTON_X:
-                self.fidx += 1
-                self.fidx %= len(self.forecasts)
-                self.clear_and_update()
-            elif pin == DisplayHATMini.BUTTON_Y:
                 self.fidx -= 1
                 self.fidx = max(0, self.fidx)
+                self.clear_and_update()
+            elif pin == DisplayHATMini.BUTTON_Y:
+                self.fidx += 1
+                self.fidx = min(len(self.forecasts), self.fidx)
                 self.clear_and_update()
 
         elif self.mode == AppMode.TIME:
