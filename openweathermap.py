@@ -1,7 +1,4 @@
 import os
-from datetime import datetime, timezone
-from pprint import pprint
-from tempfile import NamedTemporaryFile
 from typing import List, Dict, Any
 
 import requests
@@ -14,7 +11,6 @@ class OpenWeatherMap:
     CURRENT_WEATHER_API = API_BASE + "/data/2.5/weather" + API_PARAMS
     FORECAST_API = API_BASE + "/data/2.5/forecast" + API_PARAMS
     GEOCODING_API = API_BASE + "/geo/1.0/direct?q={location}&limit=1&appid={api_key}"
-    ICON_URL = "https://www.openweathermap.org/img/wn/{code}@2x.png"
 
     def __init__(self):
         self.lat = float(os.environ.get("LATITUDE") or input("Latitude: "))
@@ -38,13 +34,6 @@ class OpenWeatherMap:
 
     @classmethod
     def icon(cls, code: str) -> Image.Image:
-        url = cls.ICON_URL.format(code=code)
-        try:
-            with NamedTemporaryFile(suffix=".png") as ntf:
-                resp = requests.get(url)
-                assert resp.status_code == 200
-                ntf.write(resp.content)
-                ntf.seek(0)
-                return Image.open(ntf.name)
-        except Exception:
-            return Image.new("RGBA", (100, 100), (0, 0, 0))
+        return Image.open(
+            os.path.join(os.path.dirname(__file__), "icons", f"{code}@2x.png")
+        )
