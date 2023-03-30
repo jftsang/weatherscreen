@@ -33,11 +33,16 @@ class Color:
     WHITE = (255, 255, 255)
 
 
-def timestamp2str(dt: int) -> str:
+def timestamp2str(dt: int, short: bool = False) -> str:
+    if short:
+        fmt = "%H:%M %a"
+    else:
+        fmt = "%a %d %b, %H:%M %Z"
+
     return (datetime
             .fromtimestamp(dt, tz=timezone.utc)
             .astimezone()
-            .strftime("%a %d %b, %H:%M %Z")
+            .strftime(fmt)
             )
 
 
@@ -164,8 +169,24 @@ class App:
         hw = width // 2
         hh = height // 2
         mini = Image.new("RGBA", (hw, hh), Color.BLACK)
-        icon = owm.icon(weather["weather"][0]["icon"]).resize((50, 50))
-        mini.paste(icon, box=(hw // 2 - 25, hh // 2 - 25), mask=icon)
+        minidraw = ImageDraw.Draw(mini)
+        icon = owm.icon(weather["weather"][0]["icon"]).resize((80, 80))
+        mini.paste(icon, box=(hw // 2 - 40, hh // 2 - 40), mask=icon)
+        timestr = timestamp2str(weather["dt"], short=True)
+        minidraw.text(
+            xy=((hw - self.font.getlength(timestr)) // 2, 20),
+            text=timestr,
+        )
+
+        tempstr = f'{weather["main"]["temp"]:.1f} C'
+        minidraw.text(
+            xy=((hw - self.font.getlength(tempstr))//2, hh - 30),
+            text=tempstr,
+            anchor="mt",
+            fill=Color.WHITE,
+            font=self.font
+        )
+
         self.buffer.paste(mini, box=xy, mask=mini)
 
     def four_view(self):
@@ -175,6 +196,7 @@ class App:
                 self.forecasts = owm.forecasts()
         except Exception as exc:
             self.handle(exc)
+            return
 
         xys = [
             (0, 0), (width // 2, 0), (0, height // 2), (width // 2, height // 2)
@@ -272,5 +294,5 @@ class App:
 app = App()
 
 while True:
-    time.sleep(10)
+    time.sleep(1./30)
     # app.clear_and_update()

@@ -39,9 +39,12 @@ class OpenWeatherMap:
     @classmethod
     def icon(cls, code: str) -> Image.Image:
         url = cls.ICON_URL.format(code=code)
-        with NamedTemporaryFile(suffix=".png") as ntf:
-            resp = requests.get(url)
-            assert resp.status_code == 200
-            ntf.write(resp.content)
-            ntf.seek(0)
-            return Image.open(ntf.name)
+        try:
+            with NamedTemporaryFile(suffix=".png") as ntf:
+                resp = requests.get(url)
+                assert resp.status_code == 200
+                ntf.write(resp.content)
+                ntf.seek(0)
+                return Image.open(ntf.name)
+        except Exception:
+            return Image.new("RGBA", (100, 100), (0, 0, 0))
