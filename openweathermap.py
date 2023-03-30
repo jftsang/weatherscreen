@@ -19,14 +19,14 @@ class OpenWeatherMap:
 
     def current(self) -> Dict[str, Any]:
         url = self.CURRENT_WEATHER_API.format(lat=self.lat, lon=self.lon, api_key=self.api_key)
-        resp = requests.get(url)
+        resp = requests.get(url, timeout=1)
         assert resp.status_code == 200
         data = resp.json()
         return data
 
     def forecasts(self) -> List[Dict[str, Any]]:
         url = self.FORECAST_API.format(lat=self.lat, lon=self.lon, api_key=self.api_key)
-        resp = requests.get(url)
+        resp = requests.get(url, timeout=1)
         assert resp.status_code == 200
         data = resp.json()
         forecasts = data["list"]
