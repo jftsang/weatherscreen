@@ -46,6 +46,12 @@ def timestamp2str(dt: int, short: bool = False) -> str:
             )
 
 
+class Led:
+    OFF = (0, 0, 0)
+    YELLOW = (0.1, 0.1, 0)
+    RED = (0.1, 0, 0)
+
+
 class App:
     def __init__(self):
         self.mode = AppMode.CURRENT
@@ -72,7 +78,7 @@ class App:
     def handle(self, exc: Exception):
         logger.exception(exc)
         self.errors.append(exc)
-        self.displayhatmini.set_led(0.1, 0, 0)
+        self.displayhatmini.set_led(*Led.RED)
 
     def clear(self):
         self.draw.rectangle(xy=((0, 0), (width, height)),
@@ -154,7 +160,9 @@ class App:
 
     def current_view(self):
         try:
+            self.displayhatmini.set_led(*Led.YELLOW)
             current_weather = owm.current()
+            self.displayhatmini.set_led(*Led.OFF)
         except Exception as exc:
             self.handle(exc)
             return
@@ -191,9 +199,11 @@ class App:
 
     def four_view(self):
         try:
+            self.displayhatmini.set_led(*Led.YELLOW)
             current_weather = owm.current()
             if (not self.forecasts) or (self.forecasts[0]["dt"] < time.time()):
                 self.forecasts = owm.forecasts()
+            self.displayhatmini.set_led(*Led.OFF)
         except Exception as exc:
             self.handle(exc)
             return
@@ -210,9 +220,11 @@ class App:
 
     def forecast_page_view(self):
         try:
+            self.displayhatmini.set_led(*Led.YELLOW)
             if (not self.forecasts) or (self.forecasts[0]["dt"] < time.time()):
                 self.forecasts = owm.forecasts()
                 self.fidx = 0
+            self.displayhatmini.set_led(*Led.OFF)
         except Exception as exc:
             self.handle(exc)
             return
@@ -231,7 +243,7 @@ class App:
         self.draw.text(xy=(0, 20), text=dmy, fill=Color.WHITE, font=self.font)
 
     def errors_view(self):
-        self.displayhatmini.set_led(0, 0, 0)
+        self.displayhatmini.set_led(*Led.OFF)
         self.clear()
 
         if not self.errors:
