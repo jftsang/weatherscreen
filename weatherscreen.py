@@ -23,7 +23,6 @@ class AppMode(Enum):
     CURRENT = auto()
     FOUR = auto()
     FORECAST_PAGES = auto()
-    TIME = auto()
     ERRORS = auto()
 
 
@@ -94,8 +93,6 @@ class App:
                 self.four_view()
             elif self.mode == AppMode.FORECAST_PAGES:
                 self.forecast_page_view()
-            elif self.mode == AppMode.TIME:
-                self.time_view()
             elif self.mode == AppMode.ERRORS:
                 self.errors_view()
             else:
@@ -257,14 +254,6 @@ class App:
             xy=(0, 0), text="Forecast", fill=Color.WHITE, font=self.font
         )
 
-    def time_view(self):
-        dt = datetime.now()
-        hhmm = dt.strftime("%H:%M %Z")
-        dmy = dt.strftime("%a %d %b %Y")
-        self.clear()
-        self.draw.text(xy=(0, 0), text=hhmm, fill=Color.WHITE, font=self.font)
-        self.draw.text(xy=(0, 20), text=dmy, fill=Color.WHITE, font=self.font)
-
     def errors_view(self):
         self.displayhatmini.set_led(*Led.OFF)
         self.clear()
@@ -313,7 +302,7 @@ class App:
 
         elif self.mode == AppMode.FORECAST_PAGES:
             if pin == DisplayHATMini.BUTTON_A:
-                self.mode = AppMode.TIME
+                self.mode = AppMode.ERRORS
                 self.clear_and_update()
             elif pin == DisplayHATMini.BUTTON_X:
                 self.fidx -= 1
@@ -322,11 +311,6 @@ class App:
             elif pin == DisplayHATMini.BUTTON_Y:
                 self.fidx += 1
                 self.fidx = min(len(self.forecasts), self.fidx)
-                self.clear_and_update()
-
-        elif self.mode == AppMode.TIME:
-            if pin == DisplayHATMini.BUTTON_A:
-                self.mode = AppMode.ERRORS
                 self.clear_and_update()
 
         elif self.mode == AppMode.ERRORS:
