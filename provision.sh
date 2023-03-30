@@ -16,6 +16,6 @@ if [ ! -d "weatherscreen" ]; then
   git clone "https://github.com/jftsang/weatherscreen.git"
 fi
 cd weatherscreen
-git pull --ff-only
+git pull --force
 pip install -r requirements.txt
 python3 weatherscreen.py
