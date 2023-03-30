@@ -70,6 +70,7 @@ class App:
             buffer=self.buffer, backlight_pwm=True
         )
         self.displayhatmini.on_button_pressed(self.button_callback)
+        self.current_weather = None
         self.forecasts = []
         self.fidx = 0
 
@@ -116,7 +117,7 @@ class App:
         ).resize((150, 150))
         self.buffer.paste(
             icon,
-            box=(width//2 - 75, 40),
+            box=(width // 2 - 75, 40),
             mask=icon,
         )
 
@@ -125,14 +126,14 @@ class App:
         humidity = weather["main"]["humidity"]
 
         self.draw.text(
-            xy=(width//2, 25),
+            xy=(width // 2, 25),
             text=f"{temp:.1f} C",
             anchor="mt",
             fill=Color.WHITE,
             font=self.font
         )
         self.draw.text(
-            xy=(width//2, 45),
+            xy=(width // 2, 45),
             text=f"(feels like {feels_like:.1f} C)",
             anchor="mt",
             fill=Color.WHITE,
@@ -158,17 +159,36 @@ class App:
             font=self.font,
         )
 
+    def update_current_weather(self):
+        if (self.current_weather is not None
+            and (time.time() - self.current_weather["dt"]) < 300
+        ):
+            return
+
+        self.displayhatmini.set_led(*Led.YELLOW)
+        self.current_weather = owm.current()
+        print(self.current_weather)
+        self.displayhatmini.set_led(*Led.OFF)
+
+    def update_forecasts(self) -> bool:
+        if (self.forecasts
+            and self.forecasts[0]["dt"] >= time.time() + 3600 * 1.5
+        ):
+            return False
+
+        self.displayhatmini.set_led(*Led.YELLOW)
+        self.forecasts = owm.forecasts()
+        self.displayhatmini.set_led(*Led.OFF)
+        return True
+
     def current_view(self):
         try:
-            self.displayhatmini.set_led(*Led.YELLOW)
-            current_weather = owm.current()
-            self.displayhatmini.set_led(*Led.OFF)
+            self.update_current_weather()
         except Exception as exc:
             self.handle(exc)
             return
 
-        print(current_weather)
-        self.paint_weather(current_weather)
+        self.paint_weather(self.current_weather)
         self.draw.text(
             xy=(0, 0), text="Current", fill=Color.WHITE, font=self.font
         )
@@ -188,7 +208,7 @@ class App:
 
         tempstr = f'{weather["main"]["temp"]:.1f} C'
         minidraw.text(
-            xy=((hw - self.font.getlength(tempstr))//2, hh - 30),
+            xy=((hw - self.font.getlength(tempstr)) // 2, hh - 30),
             text=tempstr,
             anchor="mt",
             fill=Color.WHITE,
@@ -200,20 +220,20 @@ class App:
     def four_view(self):
         try:
             self.displayhatmini.set_led(*Led.YELLOW)
-            current_weather = owm.current()
-            if (not self.forecasts) or (self.forecasts[0]["dt"] < time.time()):
-                self.forecasts = owm.forecasts()
+            self.update_current_weather()
+            self.update_forecasts()
             self.displayhatmini.set_led(*Led.OFF)
         except Exception as exc:
             self.handle(exc)
             return
 
         xys = [
-            (0, 0), (width // 2, 0), (0, height // 2), (width // 2, height // 2)
+            (0, 0), (width // 2, 0), (0, height // 2),
+            (width // 2, height // 2)
         ]
 
         self.clear()
-        self.paint_weather_small(current_weather, xys[0])
+        self.paint_weather_small(self.current_weather, xys[0])
         self.paint_weather_small(self.forecasts[0], xys[1])
         self.paint_weather_small(self.forecasts[1], xys[2])
         self.paint_weather_small(self.forecasts[2], xys[3])
@@ -221,8 +241,8 @@ class App:
     def forecast_page_view(self):
         try:
             self.displayhatmini.set_led(*Led.YELLOW)
-            if (not self.forecasts) or (self.forecasts[0]["dt"] < time.time()):
-                self.forecasts = owm.forecasts()
+            updated = self.update_forecasts()
+            if updated:
                 self.fidx = 0
             self.displayhatmini.set_led(*Led.OFF)
         except Exception as exc:
@@ -258,7 +278,8 @@ class App:
         y = 20
         for exc in self.errors:
             print(str(exc))
-            self.draw.text(xy=(20, y), text=str(exc), fill=Color.RED, font=self.font)
+            self.draw.text(xy=(20, y), text=str(exc), fill=Color.RED,
+                           font=self.font)
             y += 20
         self.errors = []
 
@@ -306,5 +327,5 @@ class App:
 app = App()
 
 while True:
-    time.sleep(1./30)
+    time.sleep(1. / 30)
     # app.clear_and_update()
