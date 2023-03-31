@@ -1,12 +1,14 @@
 import logging
 import time
 from datetime import datetime, timezone
-from enum import Enum, auto
+from functools import lru_cache
+from threading import Thread
 from typing import Any, Dict, List
 
 from PIL import Image, ImageDraw, ImageFont
 from displayhatmini import DisplayHATMini
 from dotenv import load_dotenv
+from netifaces import interfaces, ifaddresses, AF_INET
 
 from openweathermap import OpenWeatherMap
 
@@ -19,6 +21,21 @@ width = DisplayHATMini.WIDTH
 height = DisplayHATMini.HEIGHT
 
 
+@lru_cache()
+def ip_str():
+    print("Working out ip addresses...")
+    ip_str_lines = []
+    for ifaceName in interfaces():
+        addresses = [i['addr'] for i in
+                     ifaddresses(ifaceName).setdefault(AF_INET, [
+                         {'addr': 'No IP addr'}])]
+        ip_str_lines.append(f"{ifaceName}: {' '.join(addresses)}")
+
+    print("\n".join(ip_str_lines))
+    return ip_str_lines
+
+
+Thread(target=ip_str).run()
 
 
 class Color:
@@ -64,8 +81,12 @@ class App:
             self.font = ImageFont.truetype(
                 "/usr/share/fonts/truetype/freefont/FreeMono.ttf", 20
             )
+            self.smallfont = ImageFont.truetype(
+                "/usr/share/fonts/truetype/freefont/FreeMono.ttf", 12
+            )
         except OSError:
             self.font = ImageFont.load_default()
+            self.smallfont = ImageFont.load_default()
 
         self.displayhatmini = DisplayHATMini(
             buffer=self.buffer, backlight_pwm=True
@@ -81,7 +102,7 @@ class App:
         self.forecasts = []
         self.fidx = 0
 
-        self.page_view()
+        self.errors_view()
 
     def handle(self, exc: Exception):
         logger.exception(exc)
@@ -90,8 +111,6 @@ class App:
 
     def clear(self):
         self.draw.rectangle(xy=((0, 0), (width, height)), fill=Color.BLACK)
-        self.displayhatmini.display()
-        self.displayhatmini.set_backlight(0.2)
 
     def update(self):
         self.displayhatmini.display()
@@ -249,7 +268,7 @@ class App:
 
         self.clear()
         weathers = [self.current_weather, *self.forecasts][
-            self.fidx : self.fidx + 4
+            self.fidx:self.fidx + 4
         ]
         for weather, xy in zip(weathers, xys):
             self.paint_weather_small(weather, xy)
@@ -300,6 +319,16 @@ class App:
                 xy=(0, 0), text="No errors!", fill=Color.WHITE, font=self.font
             )
 
+        y = height - 60
+        for line in ip_str():
+            self.draw.text(
+                xy=(10, y),
+                text=line,
+                fill=Color.WHITE,
+                font=self.smallfont
+            )
+            y += 20
+
         def button_callback(pin):
             if not self.displayhatmini.read_button(pin):
                 return
@@ -308,9 +337,11 @@ class App:
 
         self.callback_handler.action = button_callback
         self.update()
+        print("Errors view done")
 
 
 app = App()
 
 while True:
-    time.sleep(1.0 / 30)
+    pass
+    # time.sleep(1.0 / 30)

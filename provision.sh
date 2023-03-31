@@ -18,4 +18,4 @@ fi
 cd weatherscreen
 git pull --force
 pip install -r requirements.txt
-python3 weatherscreen.py
+#python3 weatherscreen.py

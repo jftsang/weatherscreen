@@ -1,4 +1,5 @@
 displayhatmini
+netifaces
 numpy
 Pillow
 python-dotenv
