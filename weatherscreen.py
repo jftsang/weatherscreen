@@ -102,7 +102,8 @@ class App:
 
         self.current_weather = None
         self.forecasts = []
-        self.fidx = 0
+        self.last_update_forecasts: float = 0
+        self.fidx: int = 0
 
         self.errors_view()
 
@@ -179,7 +180,7 @@ class App:
     def update_forecasts(self):
         if (
             self.forecasts
-            and self.forecasts[0]["dt"] >= time.time() + 3600 * 1.5
+            and self.last_update_forecasts >= time.time() - 3600
         ):
             print("Skipping forecast update...")
             return
@@ -187,6 +188,7 @@ class App:
         print("Updating forecasts...")
         self.displayhatmini.set_led(*Led.YELLOW)
         self.forecasts = owm.forecasts()
+        self.last_update_forecasts = time.time()
         self.displayhatmini.set_led(*Led.OFF)
 
     def page_view(self):
