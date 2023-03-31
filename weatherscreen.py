@@ -282,23 +282,23 @@ class App:
         self.displayhatmini.set_led(*Led.OFF)
         self.clear()
 
-        if not self.errors:
+        if self.errors:
+            self.draw.text(
+                xy=(0, 0), text="Errors", fill=Color.RED, font=self.font
+            )
+            y = 20
+            for exc in self.errors:
+                print(str(exc))
+                self.draw.text(
+                    xy=(20, y), text=str(exc), fill=Color.RED, font=self.font
+                )
+                y += 20
+            self.errors = []
+
+        else:
             self.draw.text(
                 xy=(0, 0), text="No errors!", fill=Color.WHITE, font=self.font
             )
-            return
-
-        self.draw.text(
-            xy=(0, 0), text="Errors", fill=Color.RED, font=self.font
-        )
-        y = 20
-        for exc in self.errors:
-            print(str(exc))
-            self.draw.text(
-                xy=(20, y), text=str(exc), fill=Color.RED, font=self.font
-            )
-            y += 20
-        self.errors = []
 
         def button_callback(pin):
             if not self.displayhatmini.read_button(pin):
