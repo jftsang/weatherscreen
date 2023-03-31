@@ -118,7 +118,7 @@ class App:
     def clear(self):
         self.draw.rectangle(xy=((0, 0), (width, height)), fill=Color.BLACK)
 
-    def update(self):
+    def redraw(self):
         self.displayhatmini.display()
 
     def paint_weather(self, weather: Dict[str, Any]):
@@ -226,7 +226,7 @@ class App:
                 self.page_view()
 
         self.callback_handler.action = button_callback
-        self.update()
+        self.redraw()
 
     def paint_weather_small(self, weather, xy):
         hw = width // 2
@@ -294,7 +294,7 @@ class App:
                 self.four_view()
 
         self.callback_handler.action = button_callback
-        self.update()
+        self.redraw()
 
     def errors_view(self):
         print("Errors view")
@@ -331,7 +331,7 @@ class App:
                 self.page_view()
 
         self.callback_handler.action = button_callback
-        self.update()
+        self.redraw()
         print("Errors view done")
 
 
