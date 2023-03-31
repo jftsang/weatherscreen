@@ -112,14 +112,14 @@ class App:
 
         self.draw.text(
             xy=(width // 2, 25),
-            text=f"{temp:.1f} C",
+            text=f"{temp:.1f} °C, {humidity:.0f}% 💧",
             anchor="mt",
             fill=Color.WHITE,
             font=self.font,
         )
         self.draw.text(
             xy=(width // 2, 45),
-            text=f"(feels like {feels_like:.1f} C)",
+            text=f"(feels like {feels_like:.1f} °C)",
             anchor="mt",
             fill=Color.WHITE,
             font=self.font,
@@ -220,7 +220,7 @@ class App:
             font=self.font,
         )
 
-        tempstr = f'{weather["main"]["temp"]:.1f} C'
+        tempstr = f'{weather["main"]["temp"]:.1f} °C, {weather["main"]["humidity"]:.0f}%'
         minidraw.text(
             xy=((hw - self.font.getlength(tempstr)) // 2, hh - 30),
             text=tempstr,
