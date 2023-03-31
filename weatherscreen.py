@@ -83,8 +83,6 @@ class App:
         self.displayhatmini.set_backlight(0.2)
 
     def clear_and_update(self):
-        print(self.mode)
-
         try:
             if self.mode == AppMode.PAGE:
                 self.page_view()
@@ -100,7 +98,6 @@ class App:
         self.displayhatmini.display()
 
     def paint_weather(self, weather: Dict[str, Any]):
-        print(weather)
         self.clear()
 
         icon = owm.icon(weather["weather"][0]["icon"]).resize((150, 150))
@@ -155,13 +152,9 @@ class App:
 
         self.displayhatmini.set_led(*Led.YELLOW)
         self.current_weather = owm.current()
-        print(self.current_weather)
         self.displayhatmini.set_led(*Led.OFF)
 
     def update_forecasts(self):
-        print(self.forecasts and self.forecasts[0]["dt"])
-        print(time.time())
-        print(self.forecasts and self.forecasts[0]["dt"] - time.time())
         if (
             self.forecasts
             and self.forecasts[0]["dt"] >= time.time() + 3600 * 1.5
@@ -172,7 +165,6 @@ class App:
         self.displayhatmini.set_led(*Led.YELLOW)
         self.forecasts = owm.forecasts()
         self.displayhatmini.set_led(*Led.OFF)
-        self.fidx = 0
 
     def page_view(self):
         try:
@@ -180,11 +172,9 @@ class App:
             self.update_forecasts()
         except Exception as exc:
             self.handle(exc)
-            return
-
-        print(self.fidx)
 
         weathers = [self.current_weather, *self.forecasts]
+
         self.paint_weather(weathers[self.fidx])
         self.draw.text(
             xy=(0, 0),
@@ -226,7 +216,6 @@ class App:
             self.displayhatmini.set_led(*Led.OFF)
         except Exception as exc:
             self.handle(exc)
-            return
 
         xys = [
             (0, 0),
