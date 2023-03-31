@@ -70,6 +70,18 @@ class CallbackHandler:
         self.action(pin)
 
 
+try:
+    font = ImageFont.truetype(
+        "/usr/share/fonts/truetype/freefont/FreeMono.ttf", 20
+    )
+    smallfont = ImageFont.truetype(
+        "/usr/share/fonts/truetype/freefont/FreeMono.ttf", 12
+    )
+except OSError:
+    font = ImageFont.load_default()
+    smallfont = ImageFont.load_default()
+
+
 class App:
     def __init__(self):
         print("Initializing app...")
@@ -77,16 +89,6 @@ class App:
 
         self.buffer = Image.new("RGB", (width, height))
         self.draw = ImageDraw.Draw(self.buffer)
-        try:
-            self.font = ImageFont.truetype(
-                "/usr/share/fonts/truetype/freefont/FreeMono.ttf", 20
-            )
-            self.smallfont = ImageFont.truetype(
-                "/usr/share/fonts/truetype/freefont/FreeMono.ttf", 12
-            )
-        except OSError:
-            self.font = ImageFont.load_default()
-            self.smallfont = ImageFont.load_default()
 
         self.displayhatmini = DisplayHATMini(
             buffer=self.buffer, backlight_pwm=True
@@ -134,31 +136,31 @@ class App:
             text=f"{temp:.1f} °C, {humidity:.0f}% 💧",
             anchor="mt",
             fill=Color.WHITE,
-            font=self.font,
+            font=font,
         )
         self.draw.text(
             xy=(width // 2, 45),
             text=f"(feels like {feels_like:.1f} °C)",
             anchor="mt",
             fill=Color.WHITE,
-            font=self.font,
+            font=font,
         )
 
         location = weather.get("name")
         if location is not None:
             self.draw.text(
-                xy=(width - self.font.getlength(location), 0),
+                xy=(width - font.getlength(location), 0),
                 text=location,
                 fill=Color.WHITE,
-                font=self.font,
+                font=font,
             )
 
         timestr = timestamp2str(weather["dt"])
         self.draw.text(
-            xy=(width - self.font.getlength(timestr), height - 20),
+            xy=(width - font.getlength(timestr), height - 20),
             text=timestr,
             fill=Color.RED,
-            font=self.font,
+            font=font,
         )
 
     def update_current_weather(self):
@@ -202,7 +204,7 @@ class App:
             xy=(0, 0),
             text="Current" if self.fidx == 0 else "Forecast",
             fill=Color.WHITE,
-            font=self.font,
+            font=font,
         )
 
         def button_callback(pin):
@@ -233,18 +235,18 @@ class App:
         mini.paste(icon, box=(hw // 2 - 40, hh // 2 - 40), mask=icon)
         timestr = timestamp2str(weather["dt"], short=True)
         minidraw.text(
-            xy=((hw - self.font.getlength(timestr)) // 2, 20),
+            xy=((hw - font.getlength(timestr)) // 2, 20),
             text=timestr,
             fill=Color.WHITE,
-            font=self.font,
+            font=font,
         )
 
         tempstr = f'{weather["main"]["temp"]:.1f} °C, {weather["main"]["humidity"]:.0f}%'
         minidraw.text(
-            xy=((hw - self.font.getlength(tempstr)) // 2, hh - 30),
+            xy=((hw - font.getlength(tempstr)) // 2, hh - 30),
             text=tempstr,
             fill=Color.WHITE,
-            font=self.font,
+            font=font,
         )
 
         self.buffer.paste(mini, box=xy, mask=mini)
@@ -303,20 +305,20 @@ class App:
 
         if self.errors:
             self.draw.text(
-                xy=(0, 0), text="Errors", fill=Color.RED, font=self.font
+                xy=(0, 0), text="Errors", fill=Color.RED, font=font
             )
             y = 20
             for exc in self.errors:
                 print(str(exc))
                 self.draw.text(
-                    xy=(20, y), text=str(exc), fill=Color.RED, font=self.font
+                    xy=(20, y), text=str(exc), fill=Color.RED, font=font
                 )
                 y += 20
             self.errors = []
 
         else:
             self.draw.text(
-                xy=(0, 0), text="No errors!", fill=Color.WHITE, font=self.font
+                xy=(0, 0), text="No errors!", fill=Color.WHITE, font=font
             )
 
         y = height - 60
@@ -325,7 +327,7 @@ class App:
                 xy=(10, y),
                 text=line,
                 fill=Color.WHITE,
-                font=self.smallfont
+                font=smallfont
             )
             y += 20
 
