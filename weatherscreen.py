@@ -19,10 +19,6 @@ width = DisplayHATMini.WIDTH
 height = DisplayHATMini.HEIGHT
 
 
-class AppMode(Enum):
-    PAGE = auto()
-    FOUR = auto()
-    ERRORS = auto()
 
 
 class Color:
@@ -59,7 +55,7 @@ class CallbackHandler:
 
 class App:
     def __init__(self):
-        self.mode = AppMode.PAGE
+        print("Initializing app...")
         self.errors: List[Exception] = []
 
         self.buffer = Image.new("RGB", (width, height))
@@ -75,6 +71,9 @@ class App:
             buffer=self.buffer, backlight_pwm=True
         )
 
+        # You can only make one call to DisplayHATMini.on_button_pressed
+        # so if you want to change the callback dynamically you must use
+        # a handler like this.
         self.callback_handler = CallbackHandler(self)
         self.displayhatmini.on_button_pressed(self.callback_handler.act)
 
