@@ -2,7 +2,7 @@ import logging
 import time
 from datetime import datetime, timezone
 from functools import lru_cache
-from threading import Thread
+from threading import Thread, Timer
 from typing import Any, Dict, List
 
 from PIL import Image, ImageDraw, ImageFont
@@ -73,6 +73,21 @@ class CallbackHandler:
         self.action(pin)
 
 
+class LoopHandler:
+    def __init__(self, app, action=None):
+        self.app = app
+        self.action = action
+
+    def act(self):
+        if self.action is not None:
+            try:
+                self.action(self.app)
+            except Exception as exc:
+                self.app.handle(exc)
+
+        Timer(60, self.act).start()
+
+
 try:
     font = ImageFont.truetype(
         "/usr/share/fonts/truetype/freefont/FreeMono.ttf", 20
@@ -100,13 +115,16 @@ class App:
         # You can only make one call to DisplayHATMini.on_button_pressed
         # so if you want to change the callback dynamically you must use
         # a handler like this.
-        self.callback_handler = CallbackHandler(self)
-        self.displayhatmini.on_button_pressed(self.callback_handler.act)
+        self.button_handler = CallbackHandler(self)
+        self.displayhatmini.on_button_pressed(self.button_handler.act)
 
         self.current_weather = None
         self.forecasts = []
         self.last_update_forecasts: float = 0
         self.fidx: int = 0
+
+        self.loop_handler = LoopHandler(self)
+        self.loop_handler.act()
 
         self.errors_view()
 
@@ -170,7 +188,7 @@ class App:
     def update_current_weather(self):
         if (
             self.current_weather is not None
-            and (time.time() - self.current_weather["dt"]) < 300
+            and (time.time() - self.current_weather["dt"]) < 60
         ):
             print("Skipping current weather update...")
             return
@@ -225,7 +243,8 @@ class App:
                 self.fidx = min(len(self.forecasts) + 1, self.fidx)
                 self.page_view()
 
-        self.callback_handler.action = button_callback
+        self.button_handler.action = button_callback
+        self.loop_handler.action = App.page_view
         self.redraw()
 
     def paint_weather_small(self, weather, xy):
@@ -293,7 +312,8 @@ class App:
                 self.fidx = min(len(self.forecasts), self.fidx)
                 self.four_view()
 
-        self.callback_handler.action = button_callback
+        self.button_handler.action = button_callback
+        self.loop_handler.action = App.four_view
         self.redraw()
 
     def errors_view(self):
@@ -330,12 +350,14 @@ class App:
             if pin == DisplayHATMini.BUTTON_A:
                 self.page_view()
 
-        self.callback_handler.action = button_callback
+        self.button_handler.action = button_callback
+        self.loop_handler.action = None
         self.redraw()
         print("Errors view done")
 
 
 app = App()
+
 
 while True:
     pass
