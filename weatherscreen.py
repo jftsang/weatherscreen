@@ -26,9 +26,12 @@ def ip_str():
     print("Working out ip addresses...")
     ip_str_lines = []
     for ifaceName in interfaces():
-        addresses = [i['addr'] for i in
-                     ifaddresses(ifaceName).setdefault(AF_INET, [
-                         {'addr': 'No IP addr'}])]
+        addresses = [
+            i["addr"]
+            for i in ifaddresses(ifaceName).setdefault(
+                AF_INET, [{"addr": "No IP addr"}]
+            )
+        ]
         ip_str_lines.append(f"{ifaceName}: {' '.join(addresses)}")
 
     print("\n".join(ip_str_lines))
@@ -178,10 +181,7 @@ class App:
         self.displayhatmini.set_led(*Led.OFF)
 
     def update_forecasts(self):
-        if (
-            self.forecasts
-            and self.last_update_forecasts >= time.time() - 3600
-        ):
+        if self.forecasts and self.last_update_forecasts >= time.time() - 3600:
             print("Skipping forecast update...")
             return
 
@@ -272,14 +272,10 @@ class App:
 
         self.clear()
         weathers = [self.current_weather, *self.forecasts][
-            self.fidx:self.fidx + 4
+            self.fidx : self.fidx + 4
         ]
         for weather, xy in zip(weathers, xys):
             self.paint_weather_small(weather, xy)
-        # self.paint_weather_small(self.current_weather, xys[0])
-        # self.paint_weather_small(self.forecasts[0], xys[1])
-        # self.paint_weather_small(self.forecasts[1], xys[2])
-        # self.paint_weather_small(self.forecasts[2], xys[3])
 
         def button_callback(pin):
             if not self.displayhatmini.read_button(pin):
@@ -306,9 +302,7 @@ class App:
         self.clear()
 
         if self.errors:
-            self.draw.text(
-                xy=(0, 0), text="Errors", fill=Color.RED, font=font
-            )
+            self.draw.text(xy=(0, 0), text="Errors", fill=Color.RED, font=font)
             y = 20
             for exc in self.errors:
                 print(str(exc))
@@ -326,10 +320,7 @@ class App:
         y = height - 60
         for line in ip_str():
             self.draw.text(
-                xy=(10, y),
-                text=line,
-                fill=Color.WHITE,
-                font=smallfont
+                xy=(10, y), text=line, fill=Color.WHITE, font=smallfont
             )
             y += 20
 
