@@ -48,6 +48,15 @@ class Led:
     RED = (0.1, 0, 0)
 
 
+class CallbackHandler:
+    def __init__(self, app):
+        self.app = app
+        self.action = lambda pin: None
+
+    def act(self, pin):
+        self.action(pin)
+
+
 class App:
     def __init__(self):
         self.mode = AppMode.PAGE
@@ -65,12 +74,15 @@ class App:
         self.displayhatmini = DisplayHATMini(
             buffer=self.buffer, backlight_pwm=True
         )
-        self.displayhatmini.on_button_pressed(self.button_callback)
+
+        self.callback_handler = CallbackHandler(self)
+        self.displayhatmini.on_button_pressed(self.callback_handler.act)
+
         self.current_weather = None
         self.forecasts = []
         self.fidx = 0
 
-        self.clear_and_update()
+        self.page_view()
 
     def handle(self, exc: Exception):
         logger.exception(exc)
@@ -82,19 +94,7 @@ class App:
         self.displayhatmini.display()
         self.displayhatmini.set_backlight(0.2)
 
-    def clear_and_update(self):
-        try:
-            if self.mode == AppMode.PAGE:
-                self.page_view()
-            elif self.mode == AppMode.FOUR:
-                self.four_view()
-            elif self.mode == AppMode.ERRORS:
-                self.errors_view()
-            else:
-                raise NotImplementedError(f"Can't handle mode {self.mode}")
-        except Exception as exc:
-            self.handle(exc)
-
+    def update(self):
         self.displayhatmini.display()
 
     def paint_weather(self, weather: Dict[str, Any]):
@@ -148,8 +148,10 @@ class App:
             self.current_weather is not None
             and (time.time() - self.current_weather["dt"]) < 300
         ):
+            print("Skipping current weather update...")
             return
 
+        print("Updating current weather...")
         self.displayhatmini.set_led(*Led.YELLOW)
         self.current_weather = owm.current()
         self.displayhatmini.set_led(*Led.OFF)
@@ -159,14 +161,16 @@ class App:
             self.forecasts
             and self.forecasts[0]["dt"] >= time.time() + 3600 * 1.5
         ):
-            print("Skipping an update")
+            print("Skipping forecast update...")
             return
 
+        print("Updating forecasts...")
         self.displayhatmini.set_led(*Led.YELLOW)
         self.forecasts = owm.forecasts()
         self.displayhatmini.set_led(*Led.OFF)
 
     def page_view(self):
+        print("Page view")
         try:
             self.update_current_weather()
             self.update_forecasts()
@@ -182,6 +186,25 @@ class App:
             fill=Color.WHITE,
             font=self.font,
         )
+
+        def button_callback(pin):
+            if not self.displayhatmini.read_button(pin):
+                return
+            if pin == DisplayHATMini.BUTTON_A:
+                self.four_view()
+            elif pin == DisplayHATMini.BUTTON_B:
+                self.errors_view()
+            elif pin == DisplayHATMini.BUTTON_X:
+                self.fidx -= 1
+                self.fidx = max(0, self.fidx)
+                self.page_view()
+            elif pin == DisplayHATMini.BUTTON_Y:
+                self.fidx += 1
+                self.fidx = min(len(self.forecasts) + 1, self.fidx)
+                self.page_view()
+
+        self.callback_handler.action = button_callback
+        self.update()
 
     def paint_weather_small(self, weather, xy):
         hw = width // 2
@@ -209,6 +232,7 @@ class App:
         self.buffer.paste(mini, box=xy, mask=mini)
 
     def four_view(self):
+        print("Four view")
         try:
             self.displayhatmini.set_led(*Led.YELLOW)
             self.update_current_weather()
@@ -235,7 +259,27 @@ class App:
         # self.paint_weather_small(self.forecasts[1], xys[2])
         # self.paint_weather_small(self.forecasts[2], xys[3])
 
+        def button_callback(pin):
+            if not self.displayhatmini.read_button(pin):
+                return
+            if pin == DisplayHATMini.BUTTON_A:
+                self.page_view()
+            elif pin == DisplayHATMini.BUTTON_B:
+                self.errors_view()
+            elif pin == DisplayHATMini.BUTTON_X:
+                self.fidx -= 4
+                self.fidx = max(0, self.fidx)
+                self.four_view()
+            elif pin == DisplayHATMini.BUTTON_Y:
+                self.fidx += 4
+                self.fidx = min(len(self.forecasts), self.fidx)
+                self.four_view()
+
+        self.callback_handler.action = button_callback
+        self.update()
+
     def errors_view(self):
+        print("Errors view")
         self.displayhatmini.set_led(*Led.OFF)
         self.clear()
 
@@ -257,47 +301,17 @@ class App:
             y += 20
         self.errors = []
 
-    def button_callback(self, pin):
-        if not self.displayhatmini.read_button(pin):
-            return
-
-        if self.mode == AppMode.PAGE:
+        def button_callback(pin):
+            if not self.displayhatmini.read_button(pin):
+                return
             if pin == DisplayHATMini.BUTTON_A:
-                self.mode = AppMode.FOUR
-                self.clear_and_update()
-            elif pin == DisplayHATMini.BUTTON_X:
-                self.fidx -= 1
-                self.fidx = max(0, self.fidx)
-                self.clear_and_update()
-            elif pin == DisplayHATMini.BUTTON_Y:
-                self.fidx += 1
-                self.fidx = min(len(self.forecasts) + 1, self.fidx)
-                self.clear_and_update()
+                self.page_view()
 
-        elif self.mode == AppMode.FOUR:
-            if pin == DisplayHATMini.BUTTON_A:
-                self.mode = AppMode.ERRORS
-                self.clear_and_update()
-            elif pin == DisplayHATMini.BUTTON_X:
-                self.fidx -= 4
-                self.fidx = max(0, self.fidx)
-                self.clear_and_update()
-            elif pin == DisplayHATMini.BUTTON_Y:
-                self.fidx += 4
-                self.fidx = min(len(self.forecasts), self.fidx)
-                self.clear_and_update()
-
-        elif self.mode == AppMode.ERRORS:
-            if pin == DisplayHATMini.BUTTON_A:
-                self.mode = AppMode.PAGE
-                self.clear_and_update()
-
-        else:
-            raise RuntimeError("Unknown operating mode")
+        self.callback_handler.action = button_callback
+        self.update()
 
 
 app = App()
 
 while True:
     time.sleep(1.0 / 30)
-    # app.clear_and_update()
