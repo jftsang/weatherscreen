@@ -1,4 +1,5 @@
 from abc import abstractmethod, ABC
+from datetime import datetime, timezone
 
 from utils import Led, Color, ip_str, smallfont, font
 
@@ -31,6 +32,8 @@ class View(ABC):
     @staticmethod
     def loop(app):
         pass
+
+    loop_period = 3600
 
 
 class PageView(View):
@@ -68,7 +71,7 @@ class PageView(View):
 
     @staticmethod
     def buttonY(app):
-        app.fidx = min(len(app.forecasts) + 1, app.fidx)
+        app.fidx = min(len(app.forecasts), app.fidx + 1)
         app.loadview(PageView)
 
     @staticmethod
@@ -80,7 +83,7 @@ class FourView(View):
     @staticmethod
     def render(app):
         width, height = app.displayhatmini.WIDTH, app.displayhatmini.HEIGHT
-        print("Four view")
+        print("Four view, idx", app.fidx)
         try:
             app.displayhatmini.set_led(*Led.YELLOW)
             app.update_current_weather()
@@ -118,7 +121,7 @@ class FourView(View):
 
     @staticmethod
     def buttonY(app):
-        app.fidx = min(len(app.forecasts) + 4, app.fidx)
+        app.fidx = min(len(app.forecasts), app.fidx + 4)
         app.loadview(FourView)
 
     @staticmethod
@@ -161,6 +164,23 @@ class ErrorsView(View):
             y += 20
 
     @staticmethod
+    def update_time(app):
+        width, height = app.displayhatmini.WIDTH, app.displayhatmini.HEIGHT
+        timestr = datetime.now(tz=timezone.utc).astimezone().strftime("%H:%M:%S")
+        app.draw.rectangle(
+            xy=(0, height // 2 - 20, width, height // 2 + 10),
+            fill=Color.BLACK,
+        )
+        app.draw.text(
+            xy=(width // 2, height // 2),
+            text=timestr,
+            fill=Color.RED,
+            font=font,
+            anchor="mb",
+        )
+        app.redraw()
+
+    @staticmethod
     def buttonA(app):
         app.loadview(PageView)
 
@@ -168,3 +188,9 @@ class ErrorsView(View):
     def buttonB(app):
         ip_str.cache_clear()
         app.loadview(ErrorsView)
+
+    @staticmethod
+    def loop(app):
+        ErrorsView.update_time(app)
+
+    loop_period = 0.5

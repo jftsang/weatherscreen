@@ -3,7 +3,7 @@ import time
 from threading import Timer
 from typing import Any, Dict, List
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 from displayhatmini import DisplayHATMini
 from dotenv import load_dotenv
 
@@ -30,9 +30,10 @@ class CallbackHandler:
 
 
 class LoopHandler:
-    def __init__(self, app, action=None):
+    def __init__(self, app, action=None, period=1):
         self.app = app
         self.action = action
+        self.period = period
 
     def act(self):
         if self.action is not None:
@@ -41,7 +42,7 @@ class LoopHandler:
             except Exception as exc:
                 self.app.handle(exc)
 
-        Timer(60, self.act).start()
+        Timer(self.period, self.act).start()
 
 
 class App:
@@ -169,8 +170,9 @@ class App:
             }[pin](self)
 
         self.button_handler.action = button_callback
-
         self.loop_handler.action = viewcls.loop
+        self.loop_handler.period = viewcls.loop_period
+
         self.redraw()
 
     def paint_weather_small(self, weather, xy):
