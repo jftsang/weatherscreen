@@ -150,7 +150,11 @@ class ErrorsView(View):
             )
 
         y = app.displayhatmini.HEIGHT - 60
-        for line in ip_str():
+
+        app.displayhatmini.set_led(*Led.YELLOW)
+        lines = ip_str()
+        app.displayhatmini.set_led(*Led.OFF)
+        for line in lines:
             app.draw.text(
                 xy=(10, y), text=line, fill=Color.WHITE, font=smallfont
             )
@@ -159,3 +163,8 @@ class ErrorsView(View):
     @staticmethod
     def buttonA(app):
         app.loadview(PageView)
+
+    @staticmethod
+    def buttonB(app):
+        ip_str.cache_clear()
+        app.loadview(ErrorsView)
